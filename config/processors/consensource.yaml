@@ -1,0 +1,33 @@
+name: consensource
+active: true
+transactions:
+  # Would be nice to make these calls cloud/lamda functions?
+  - name: CreateOrganization
+    type: POST
+    url: https://consensource-tp.io/api/v1/organization/${name}
+  - name: UpdateOrganization
+    type: PUT
+    url: https://consensource-tp.io/api/v1/organization/${name}
+  - name: CreateAgent
+    type: POST
+    url: https://consensource-tp.io/api/v1/agents/${name}
+  - name: UpdateAgent
+    type: PUT
+    url: https://consensource-tp.io/api/v1/agents/${name}
+  - name: CreateStandard
+    type: POST
+    url: https://consensource-tp.io/api/v1/standards/${name}
+  - name: UpdateStandard
+    type: PUTurl: https://consensource-tp.io/api/v1/standards/${name}
+  - name: CreateCertificate
+    type: POST
+    url: https://consensource-tp.io/api/v1/certificates/${name}
+  - name: UpdateCertificate
+    type: PUT
+    url: https://consensource-tp.io/api/v1/certificates/${name}
+  - name: CreateAssertion
+    type: POST
+    url: https://consensource-tp.io/api/v1/assertions/${name}
+  - name: TransferAssertion
+    type: POST
+    url: https://consensource-tp.io/api/v1/transfer/${name}
