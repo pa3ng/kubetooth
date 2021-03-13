@@ -2,23 +2,18 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
-	"path/filepath"
 
 	"github.com/spf13/viper"
 
 	"github.com/pa3ng/kubetooth/models"
+	k8sclient "github.com/pa3ng/kubetooth/pkg/kubernetes"
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 func newBlockchain() *models.Blockchain {
@@ -47,60 +42,24 @@ func main() {
 		b.Consensus,
 	)
 
-	if err := Deploy(*b); err != nil {
+	kclient, err := k8sclient.New()
+	if err != nil {
+		panic(err)
+	}
+
+	err = kclient.CreateKeysConfigMap("keys-config", b.Nodes)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := Deploy(*b, kclient); err != nil {
 		panic(err)
 	}
 }
 
-func Deploy(b models.Blockchain) error {
-	// kubeconfig stuff
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
+func Deploy(b models.Blockchain, k *k8sclient.Client) error {
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	// Setup configmap
-
-	configmapsClient := clientset.CoreV1().ConfigMaps(apiv1.NamespaceDefault)
-
-	configmapName := "keys-config"
-	configmap := &apiv1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: configmapName,
-		},
-		Data: map[string]string{
-			"pbft0priv": "358a6fd81cf83d4ac8ab393e9a2ad7dbc5435455056ad999c6ab59b901925af2",
-			"pbft0pub":  "02ba9742c63fbef5280e667a3621133e8e0c3c78863768cb53cf8e5f3eba4f46b2",
-			"pbft1priv": "fac1addf56979f36549f60c83191f687878626cda5228cb34acea956b6e4550b",
-			"pbft1pub":  "02ce2a602b3dce0fe8ade03b9385b291072534fdda2a2408977837a9165b8f8270",
-			"pbft2priv": "5a53d3c90ced670e93ce8f3d114c1cd6638353dc90fa9989b5558661c67cf29b",
-			"pbft2pub":  "03cfdedc514a90b4d56ca17b8ff69b8f616716d5631cbda8832e019cfcf02c2f19",
-			"pbft3priv": "340e6af8412e7ac4de7a0738d052f098a00263c16dadaef226d238cf7db05ab7",
-			"pbft3pub":  "02864d1f4bc4b0de8b8a30e9f0049f1f94b151dfe005660268bc64edb6ef4ffe0a",
-			"pbft4priv": "c47337ed8d2744d382d69773cebfee94880f2b2c66f08b9b4eafac31866377e6",
-			"pbft4pub":  "024c8c1c9421556f08a126cea643c7be008750d0605bace6ae6c0198bf4a530291",
-		},
-	}
-
-	// Create ConfigMap
-	fmt.Println("Creating configmap...")
-	resultC, err := configmapsClient.Create(context.TODO(), configmap, metav1.CreateOptions{})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Created configmap %q.\n", resultC.GetObjectMeta().GetName())
+	clientset := k.Clientset
 
 	// Setup Service
 	appName := fmt.Sprintf("%s-%s-%s-%d", b.Name, b.Ledger, b.Consensus, 0)
@@ -211,7 +170,7 @@ func Deploy(b models.Blockchain) error {
 								{
 									ConfigMapRef: &apiv1.ConfigMapEnvSource{
 										LocalObjectReference: apiv1.LocalObjectReference{
-											Name: configmapName,
+											Name: "keys-config",
 										},
 									},
 								},
@@ -320,8 +279,8 @@ func int32Ptr(i int32) *int32 { return &i }
 
 var vbash string = `echo "Starting validator %d" &&
 if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
-	echo $pbft0priv > /etc/sawtooth/keys/validator.priv
-	echo $pbft0pub > /etc/sawtooth/keys/validator.pub
+	echo $node0priv > /etc/sawtooth/keys/validator.priv
+	echo $node0pub > /etc/sawtooth/keys/validator.pub
 fi &&
 if [ ! -e /root/.sawtooth/keys/my_key.priv ]; then
 	sawtooth keygen my_key
@@ -330,13 +289,13 @@ if [ ! -e config-genesis.batch ]; then
 	sawset genesis -k /root/.sawtooth/keys/my_key.priv -o config-genesis.batch
 fi &&
 sleep 30 &&
-echo sawtooth.consensus.pbft.members=["\"$pbft0pub\",\"$pbft1pub\",\"$pbft2pub\",\"$pbft3pub\",\"$pbft4pub\""] &&
+echo sawtooth.consensus.pbft.members=["\"$node0pub\",\"$node1pub\",\"$node2pub\",\"$node3pub\",\"$node4pub\""] &&
 if [ ! -e config.batch ]; then
 	sawset proposal create \
 		-k /root/.sawtooth/keys/my_key.priv \
 		sawtooth.consensus.algorithm.name=pbft \
 		sawtooth.consensus.algorithm.version=1.0\
-		sawtooth.consensus.pbft.members=["\"$pbft0pub\",\"$pbft1pub\",\"$pbft2pub\",\"$pbft3pub\",\"$pbft4pub\""] \
+		sawtooth.consensus.pbft.members=["\"$node0pub\",\"$node1pub\",\"$node2pub\",\"$node3pub\",\"$node4pub\""] \
 		sawtooth.publisher.max_batches_per_block=1200 \
 		-o config.batch
 fi && \
