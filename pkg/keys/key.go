@@ -1,4 +1,4 @@
-package signer
+package keys
 
 import (
 	"encoding/hex"
@@ -8,7 +8,7 @@ import (
 
 var cachedCurve = ellcurv.S256()
 
-func GetKeyPair() (string, string) {
+func NewKeyPair() (string, string) {
 	priv, _ := ellcurv.NewPrivateKey(cachedCurve)
 	privBytes := priv.Serialize()
 

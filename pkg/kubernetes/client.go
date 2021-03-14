@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/pa3ng/kubetooth/pkg/signer"
+	"github.com/pa3ng/kubetooth/pkg/keys"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +72,7 @@ func makeKeysMap(numNodes int) map[string]string {
 	for i := 0; i < numNodes; i++ {
 		privName := fmt.Sprintf("node%dpriv", i)
 		pubName := fmt.Sprintf("node%dpub", i)
-		pubKey, privKey := signer.GetKeyPair()
+		pubKey, privKey := keys.NewKeyPair()
 		data[privName] = privKey
 		data[pubName] = pubKey
 	}
