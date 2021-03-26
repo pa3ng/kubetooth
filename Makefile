@@ -16,5 +16,5 @@ version: ## Show version
 	@echo $(VERSION) \(git commit: $(GIT_COMMIT)\)
 
 # DOCKER TASKS
-docker-build: ## [DOCKER] Build given container. Example: `make docker-build BIN=user`
+docker-build: ## [DOCKER] Build given container. Example: `make docker-build BIN=kubetooth`
 	docker build -f cmd/$(BIN)/Dockerfile --no-cache --build-arg BIN=$(BIN) --build-arg VERSION=$(VERSION) --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(BIN):local .

@@ -6,7 +6,7 @@ nodes: 5
 orchestration: kubernetes # why would we use anything else?
 processors:
   - name: consensource-tp
-    image: target/consensource-tp:latest
+    image: target/consensource-processor:latest
 subscribers:
   - name: consensource-sds
     image: target/consensource-sds:latest
