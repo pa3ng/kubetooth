@@ -8,8 +8,6 @@ import (
 
 	"github.com/pa3ng/kubetooth/models"
 	k8sclient "github.com/pa3ng/kubetooth/pkg/kubernetes"
-
-	"time"
 )
 
 func newBlockchain() *models.Blockchain {
@@ -32,7 +30,7 @@ func newBlockchain() *models.Blockchain {
 
 func main() {
 	b := newBlockchain()
-	fmt.Printf("Deploying %s blockchain version %s running on %s consensus\n",
+	fmt.Printf("Deploying %q blockchain version %q running on %q consensus\n",
 		b.Ledger,
 		b.Version,
 		b.Consensus,
@@ -43,6 +41,8 @@ func main() {
 		panic(err)
 	}
 
+	// TODO: loop through # nodes beyond this point
+
 	if err = kclient.CreateKeysConfigMap("keys-config", b.Nodes); err != nil {
 		panic(err)
 	}
@@ -51,12 +51,12 @@ func main() {
 		panic(err)
 	}
 
-	if err := kclient.Deploy(*b); err != nil {
+	if err := kclient.Deploy(b); err != nil {
 		panic(err)
 	}
 
-	time.Sleep(10 * time.Second) // replace with a check on the validator's pod status/readiness
-	if err := kclient.DeployTPs(*b); err != nil {
-		panic(err)
-	}
+	// time.Sleep(10 * time.Second) // replace with a check on the validator's pod status/readiness
+	// if err := kclient.DeployTPs(*b); err != nil {
+	// 	panic(err)
+	// }
 }

@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pbft-keys
+spec:
+  template:
+    spec:
+      containers:
+      - name: pbft-keys-generator
+        image: hyperledger/sawtooth-shell
+        command:
+          - bash
+        args:
+          - -c
+          - "for i in {0..4}; do sawadm keygen -q pbft${i}; done && cd /etc/sawtooth/keys/ && grep '' * | sed 's/\\.//' | sed 's/:/:\ /'"
+      restartPolicy: Never
+  backoffLimit: 4

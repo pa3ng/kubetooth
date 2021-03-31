@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sawtooth-2
+  labels:
+    name: sawtooth-2
+spec:
+  selector:
+    app: pbft-2
+  ports:
+    - name: "4004"
+      protocol: TCP
+      port: 4004
+      targetPort: 4004
+    - name: "5050"
+      protocol: TCP
+      port: 5050
+      targetPort: 5050
+    - name: "8008"
+      protocol: TCP
+      port: 8008
+      targetPort: 8008
+    - name: "8080"
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: "8800"
+      protocol: TCP
+      port: 8800
+      targetPort: 8800
